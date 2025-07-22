@@ -49,8 +49,49 @@ const hitSound = new Audio('hit.mp3');
 const swishSound = new Audio('swish.mp3');
 
 function drawBackground() {
-  ctx.fillStyle = '#70c5ce';
+  // Sky
+  ctx.fillStyle = '#8ecae6';
   ctx.fillRect(0, 0, canvas.width, canvas.height);
+
+  // Sun (top right)
+  ctx.beginPath();
+  ctx.arc(canvas.width - 70, 70, 50, 0, Math.PI * 2);
+  ctx.fillStyle = '#ffd166';
+  ctx.globalAlpha = 0.7;
+  ctx.fill();
+  ctx.globalAlpha = 1.0;
+
+  // Wavy Sea (bottom)
+  ctx.save();
+  ctx.beginPath();
+  let seaTop = canvas.height - 100;
+  ctx.moveTo(0, canvas.height);
+  ctx.lineTo(0, seaTop);
+  for (let x = 0; x <= canvas.width; x += 10) {
+    let wave = Math.sin((x + performance.now() / 200) / 30) * 8;
+    ctx.lineTo(x, seaTop + wave);
+  }
+  ctx.lineTo(canvas.width, canvas.height);
+  ctx.closePath();
+  ctx.fillStyle = '#219ebc';
+  ctx.fill();
+  ctx.restore();
+
+  // Bosphorus Bridge Columns (left and right)
+  ctx.save();
+  ctx.strokeStyle = '#adb5bd';
+  ctx.lineWidth = 12;
+  // Left column
+  ctx.beginPath();
+  ctx.moveTo(18, seaTop);
+  ctx.lineTo(18, seaTop - 80);
+  ctx.stroke();
+  // Right column
+  ctx.beginPath();
+  ctx.moveTo(canvas.width - 18, seaTop);
+  ctx.lineTo(canvas.width - 18, seaTop - 80);
+  ctx.stroke();
+  ctx.restore();
 }
 
 function drawBird() {
