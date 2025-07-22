@@ -16,12 +16,15 @@ A simple, addictive 2D web game where the player controls a bird, navigating it 
   - Scoring system (increment score when passing pipes)
   - Game over logic (reset, restart)
   - Game speed increases smoothly and transparently as the player scores, for gradual difficulty ramp-up
+  - Improved pipe hitbox: true circle-rectangle collision for fairness
 - [x] **Game Loop**
   - Efficient update and render cycles
 - [x] **Input Handling**
   - Mouse click and touch support
 - [x] **Score Display**
   - Real-time score during gameplay
+  - Animated score when it increases
+  - 'New!' badge for new high score
 - [x] **Sound Effects**
   - Flap sound
   - Score sound
@@ -31,6 +34,11 @@ A simple, addictive 2D web game where the player controls a bird, navigating it 
 - [x] **Sound On/Off Toggle**
 - [x] **Start Screen & Game Over Screen**
   - Game title, start button, final score, high score, restart button, sound toggle
+- [x] **UI/Visual Polish**
+  - Pipe shadows and outlines for depth and separation
+  - Sea reflection/gradient for realism
+  - Smoother basketball character rendering (no shadow/outline)
+  - Semi-transparent overlays and animated transitions for start/game over screens
 
 ---
 
@@ -70,3 +78,4 @@ A simple, addictive 2D web game where the player controls a bird, navigating it 
 - v0.2: Core gameplay, scoring, and collision completed
 - v0.3: Sound effects, high score, pause/resume, sound toggle, and UI polish completed
 - v0.4: Smooth, transparent game speed increase based on score
+- v0.5: UI polish (animated score, new badge, pipe shadows/outlines, sea reflection), improved hitbox, smoother basketball rendering

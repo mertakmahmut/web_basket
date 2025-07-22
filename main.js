@@ -185,16 +185,31 @@ function drawPipes() {
 }
 
 function checkCollision() {
+  // Margin to make hitbox less sensitive at pipe corners
+  const pipeMargin = 6;
   for (let i = 0; i < pipes.length; i++) {
     const p = pipes[i];
-    // Bird within pipe x range
-    if (BIRD_X + BIRD_RADIUS > p.x && BIRD_X - BIRD_RADIUS < p.x + PIPE_WIDTH) {
-      // Bird hits top pipe
-      if (birdY - BIRD_RADIUS < p.gapY || birdY + BIRD_RADIUS > p.gapY + PIPE_GAP) {
-        endGame();
-      }
+    // Top pipe rectangle
+    if (circleRectCollide(BIRD_X, birdY, BIRD_RADIUS, p.x + pipeMargin, 0, PIPE_WIDTH - 2 * pipeMargin, p.gapY + pipeMargin)) {
+      endGame();
+    }
+    // Bottom pipe rectangle
+    if (circleRectCollide(BIRD_X, birdY, BIRD_RADIUS, p.x + pipeMargin, p.gapY + PIPE_GAP - pipeMargin, PIPE_WIDTH - 2 * pipeMargin, canvas.height - (p.gapY + PIPE_GAP))) {
+      endGame();
     }
   }
+}
+
+// Circle-rectangle collision helper
+function circleRectCollide(cx, cy, cr, rx, ry, rw, rh) {
+  // Find the closest point to the circle within the rectangle
+  let closestX = Math.max(rx, Math.min(cx, rx + rw));
+  let closestY = Math.max(ry, Math.min(cy, ry + rh));
+  // Calculate the distance between the circle's center and this closest point
+  let dx = cx - closestX;
+  let dy = cy - closestY;
+  // If the distance is less than the circle's radius, there's a collision
+  return (dx * dx + dy * dy) < (cr * cr);
 }
 
 function updateScore() {
@@ -275,7 +290,7 @@ function drawBackground() {
 }
 
 function drawBird() {
-  // Draw basketball image only, no black circle
+  // Draw basketball image only, no black circle, no shadow, smooth edges
   ctx.save();
   ctx.beginPath();
   ctx.arc(BIRD_X, birdY, BIRD_RADIUS, 0, Math.PI * 2);
