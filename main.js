@@ -36,6 +36,11 @@ const BUTTON_HEIGHT = 50;
 const BUTTON_Y = 350;
 const BUTTON_X = (canvas.width - BUTTON_WIDTH) / 2;
 
+const SHARE_BUTTON_WIDTH = 120;
+const SHARE_BUTTON_HEIGHT = 40;
+const SHARE_BUTTON_Y = BUTTON_Y + BUTTON_HEIGHT + 30;
+const SHARE_BUTTON_X = (canvas.width - SHARE_BUTTON_WIDTH) / 2;
+
 // Load basketball image
 const basketballImg = new Image();
 basketballImg.src = 'basketball.png';
@@ -146,14 +151,14 @@ function drawHighScore() {
   }
 }
 
-function drawButton(text) {
+function drawButton(text, x = BUTTON_X, y = BUTTON_Y, w = BUTTON_WIDTH, h = BUTTON_HEIGHT) {
   ctx.fillStyle = '#4caf50';
-  ctx.fillRect(BUTTON_X, BUTTON_Y, BUTTON_WIDTH, BUTTON_HEIGHT);
+  ctx.fillRect(x, y, w, h);
   ctx.font = 'bold 28px Arial';
   ctx.fillStyle = '#fff';
   ctx.textAlign = 'center';
   ctx.textBaseline = 'middle';
-  ctx.fillText(text, canvas.width / 2, BUTTON_Y + BUTTON_HEIGHT / 2);
+  ctx.fillText(text, x + w / 2, y + h / 2);
 }
 
 function drawPipes() {
@@ -471,6 +476,7 @@ function drawGameOverScreen() {
   drawScore();
   drawHighScore();
   drawButton('Restart');
+  drawButton('Share', SHARE_BUTTON_X, SHARE_BUTTON_Y, SHARE_BUTTON_WIDTH, SHARE_BUTTON_HEIGHT);
   drawSoundToggle();
   ctx.restore();
 }
@@ -487,6 +493,12 @@ function drawStartScreen() {
   drawScore();
   drawButton('Start Game');
   drawSoundToggle();
+  // Instructions
+  ctx.font = 'bold 22px Arial';
+  ctx.fillStyle = '#fff';
+  ctx.textAlign = 'center';
+  ctx.textBaseline = 'top';
+  ctx.fillText('Hint: Tap or click to flap!', canvas.width / 2, BUTTON_Y + BUTTON_HEIGHT + 24);
   ctx.restore();
   bgMusic.pause();
   bgMusic.currentTime = 0;
@@ -510,6 +522,15 @@ function handleCanvasClick(e) {
       y >= BUTTON_Y && y <= BUTTON_Y + BUTTON_HEIGHT
     ) {
       startGame();
+      return;
+    }
+    // Check if share button is clicked
+    if (
+      x >= SHARE_BUTTON_X && x <= SHARE_BUTTON_X + SHARE_BUTTON_WIDTH &&
+      y >= SHARE_BUTTON_Y && y <= SHARE_BUTTON_Y + SHARE_BUTTON_HEIGHT
+    ) {
+      shareScore();
+      return;
     }
   } else if (!gameRunning && !gameOver) {
     // Check if start button is clicked
@@ -518,10 +539,22 @@ function handleCanvasClick(e) {
       y >= BUTTON_Y && y <= BUTTON_Y + BUTTON_HEIGHT
     ) {
       startGame();
+      return;
     }
   } else if (gameRunning && !paused) {
     flap();
   }
+}
+
+function shareScore() {
+  const shareText = `I scored ${highScore} in Flappy Basketball! 🏀 Can you beat me?`;
+  // Copy to clipboard
+  if (navigator.clipboard) {
+    navigator.clipboard.writeText(shareText);
+  }
+  // Twitter share
+  const twitterUrl = `https://twitter.com/intent/tweet?text=${encodeURIComponent(shareText)}`;
+  window.open(twitterUrl, '_blank');
 }
 
 document.addEventListener('keydown', function(e) {
