@@ -49,6 +49,44 @@ const bounceSound = new Audio('bounce.mp3');
 const hitSound = new Audio('hit.mp3');
 const swishSound = new Audio('swish.mp3');
 
+let overlayAlpha = 1;
+let overlayTargetAlpha = 1;
+let overlayFading = false;
+let overlayFadeCallback = null;
+
+function drawOverlay(alpha) {
+  ctx.save();
+  ctx.globalAlpha = alpha;
+  ctx.fillStyle = '#000';
+  ctx.fillRect(0, 0, canvas.width, canvas.height);
+  ctx.globalAlpha = 1.0;
+  ctx.restore();
+}
+
+function animateOverlay(toAlpha, callback) {
+  overlayTargetAlpha = toAlpha;
+  overlayFading = true;
+  overlayFadeCallback = callback || null;
+  requestAnimationFrame(overlayFadeStep);
+}
+
+function overlayFadeStep() {
+  if (!overlayFading) return;
+  const speed = 0.08;
+  if (Math.abs(overlayAlpha - overlayTargetAlpha) < speed) {
+    overlayAlpha = overlayTargetAlpha;
+    overlayFading = false;
+    if (overlayFadeCallback) overlayFadeCallback();
+    return;
+  }
+  overlayAlpha += (overlayTargetAlpha - overlayAlpha) * speed * 2;
+  if (currentScreen === 'start') drawStartScreen();
+  else if (currentScreen === 'gameover') drawGameOverScreen();
+  requestAnimationFrame(overlayFadeStep);
+}
+
+let currentScreen = 'start'; // 'start', 'game', 'gameover'
+
 function drawBackground() {
   // Sky
   ctx.fillStyle = '#8ecae6';
@@ -275,6 +313,7 @@ function setAllSoundMuted(muted) {
 
 function gameLoop() {
   if (!gameRunning || paused) return;
+  currentScreen = 'game';
   drawBackground();
   updateBird();
   updatePipes();
@@ -296,22 +335,27 @@ function flap() {
 }
 
 function startGame() {
-  birdY = canvas.height / 2;
-  birdVelocity = 0;
-  score = 0;
-  gameRunning = true;
-  gameOver = false;
-  pipeSpeed = PIPE_SPEED;
-  resetPipes();
-  addPipe();
-  bgMusic.currentTime = 0;
-  bgMusic.play();
-  gameLoop();
+  overlayAlpha = 1;
+  animateOverlay(0, function() {
+    birdY = canvas.height / 2;
+    birdVelocity = 0;
+    score = 0;
+    gameRunning = true;
+    gameOver = false;
+    pipeSpeed = PIPE_SPEED;
+    resetPipes();
+    addPipe();
+    bgMusic.currentTime = 0;
+    bgMusic.play();
+    currentScreen = 'game';
+    gameLoop();
+  });
 }
 
 function endGame() {
   gameRunning = false;
   gameOver = true;
+  currentScreen = 'gameover';
   bgMusic.pause();
   hitSound.currentTime = 0;
   hitSound.play();
@@ -319,14 +363,42 @@ function endGame() {
     highScore = score;
     localStorage.setItem('flappyHighScore', highScore);
   }
+  overlayAlpha = 0;
+  animateOverlay(1);
+  drawGameOverScreen();
+}
+
+function drawGameOverScreen() {
   drawBackground();
   drawPipes();
   drawBird();
-  // Draw UI last
+  // Overlay
+  drawOverlay(0.5 * overlayAlpha);
+  // UI last
+  ctx.save();
+  ctx.globalAlpha = overlayAlpha;
   drawScore();
   drawHighScore();
   drawButton('Restart');
   drawSoundToggle();
+  ctx.restore();
+}
+
+function drawStartScreen() {
+  drawBackground();
+  drawPipes();
+  drawBird();
+  // Overlay
+  drawOverlay(0.5 * overlayAlpha);
+  // UI last
+  ctx.save();
+  ctx.globalAlpha = overlayAlpha;
+  drawScore();
+  drawButton('Start Game');
+  drawSoundToggle();
+  ctx.restore();
+  bgMusic.pause();
+  bgMusic.currentTime = 0;
 }
 
 function handleCanvasClick(e) {
@@ -368,18 +440,8 @@ document.addEventListener('keydown', function(e) {
 });
 
 // Initial draw: show start button
-function drawStartScreen() {
-  drawBackground();
-  drawPipes();
-  drawBird();
-  // Draw UI last
-  drawScore();
-  drawButton('Start Game');
-  drawSoundToggle();
-  bgMusic.pause();
-  bgMusic.currentTime = 0;
-}
-
+// On initial load:
+overlayAlpha = 1;
 drawStartScreen();
 
 // Ensure canvas event listeners are registered
