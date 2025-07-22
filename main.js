@@ -282,6 +282,7 @@ function gameLoop() {
   drawBird();
   checkCollision();
   updateScore();
+  // Draw UI last
   drawScore();
   drawSoundToggle();
   if (gameRunning) requestAnimationFrame(gameLoop);
@@ -321,6 +322,7 @@ function endGame() {
   drawBackground();
   drawPipes();
   drawBird();
+  // Draw UI last
   drawScore();
   drawHighScore();
   drawButton('Restart');
@@ -370,6 +372,7 @@ function drawStartScreen() {
   drawBackground();
   drawPipes();
   drawBird();
+  // Draw UI last
   drawScore();
   drawButton('Start Game');
   drawSoundToggle();
