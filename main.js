@@ -24,6 +24,7 @@ let gameOver = false;
 let highScore = Number(localStorage.getItem('flappyHighScore')) || 0;
 let paused = false;
 let soundOn = true;
+let pipeSpeed = PIPE_SPEED;
 
 // Pipe state
 let pipes = [];
@@ -137,8 +138,10 @@ function addPipe() {
 }
 
 function updatePipes() {
+  // Smoothly increase speed as score increases
+  pipeSpeed = PIPE_SPEED + score * 0.15;
   for (let i = 0; i < pipes.length; i++) {
-    pipes[i].x -= PIPE_SPEED;
+    pipes[i].x -= pipeSpeed;
   }
   // Remove pipes that have gone off screen
   if (pipes.length && pipes[0].x + PIPE_WIDTH < 0) {
@@ -297,6 +300,7 @@ function startGame() {
   score = 0;
   gameRunning = true;
   gameOver = false;
+  pipeSpeed = PIPE_SPEED;
   resetPipes();
   addPipe();
   bgMusic.currentTime = 0;

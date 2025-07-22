@@ -15,6 +15,7 @@ A simple, addictive 2D web game where the player controls a bird, navigating it 
   - Collision detection (bird with pipes and ground)
   - Scoring system (increment score when passing pipes)
   - Game over logic (reset, restart)
+  - Game speed increases smoothly and transparently as the player scores, for gradual difficulty ramp-up
 - [x] **Game Loop**
   - Efficient update and render cycles
 - [x] **Input Handling**
@@ -68,3 +69,4 @@ A simple, addictive 2D web game where the player controls a bird, navigating it 
 - v0.1: PRD created
 - v0.2: Core gameplay, scoring, and collision completed
 - v0.3: Sound effects, high score, pause/resume, sound toggle, and UI polish completed
+- v0.4: Smooth, transparent game speed increase based on score
