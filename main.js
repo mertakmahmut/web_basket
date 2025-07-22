@@ -14,6 +14,7 @@ const PIPE_WIDTH = 60;
 const PIPE_GAP = 150;
 const PIPE_SPEED = 2;
 const PIPE_INTERVAL = 120; // frames between pipes
+const PIPE_DISTANCE = 220; // Minimum horizontal distance between pipes
 
 // Game state
 let birdY = canvas.height / 2;
@@ -48,6 +49,7 @@ basketballImg.src = 'basketball.png';
 // Load background music
 const bgMusic = new Audio('bg-music.mp3');
 bgMusic.loop = true;
+bgMusic.volume = 0.3;
 
 // Load sound effects
 const bounceSound = new Audio('bounce.mp3');
@@ -346,9 +348,8 @@ function updatePipes() {
   if (pipes.length && pipes[0].x + PIPE_WIDTH < 0) {
     pipes.shift();
   }
-  // Add new pipe
-  frameCount++;
-  if (frameCount % PIPE_INTERVAL === 0) {
+  // Add new pipe if needed (distance-based)
+  if (pipes.length === 0 || (canvas.width - (pipes[pipes.length - 1].x)) >= PIPE_DISTANCE) {
     addPipe();
   }
 }
