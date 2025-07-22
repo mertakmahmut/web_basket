@@ -87,6 +87,129 @@ function overlayFadeStep() {
 
 let currentScreen = 'start'; // 'start', 'game', 'gameover'
 
+let scoreAnim = 1;
+let scoreAnimTarget = 1;
+let scoreAnimFrame = 0;
+let showNewBadge = false;
+
+function drawScore() {
+  ctx.save();
+  ctx.font = `bold ${36 * scoreAnim}px Arial`;
+  ctx.fillStyle = '#fff';
+  ctx.textAlign = 'left';
+  ctx.textBaseline = 'top';
+  ctx.strokeStyle = '#222';
+  ctx.lineWidth = 4;
+  ctx.strokeText(score.toString(), 20, 20);
+  ctx.fillText(score.toString(), 20, 20);
+  ctx.restore();
+}
+
+function animateScore() {
+  scoreAnim = 1.4;
+  scoreAnimTarget = 1;
+  scoreAnimFrame = 10;
+}
+
+function updateScoreAnim() {
+  if (scoreAnimFrame > 0) {
+    scoreAnim += (scoreAnimTarget - scoreAnim) * 0.3;
+    scoreAnimFrame--;
+  } else {
+    scoreAnim = 1;
+  }
+}
+
+function drawHighScore() {
+  ctx.font = 'bold 28px Arial';
+  ctx.fillStyle = '#fff';
+  ctx.textAlign = 'center';
+  ctx.textBaseline = 'top';
+  ctx.strokeStyle = '#222';
+  ctx.lineWidth = 4;
+  ctx.strokeText('High Score: ' + highScore, canvas.width / 2, 80);
+  ctx.fillText('High Score: ' + highScore, canvas.width / 2, 80);
+  // Draw 'New!' badge if needed
+  if (showNewBadge) {
+    ctx.save();
+    ctx.font = 'bold 18px Arial';
+    ctx.fillStyle = '#ff595e';
+    ctx.strokeStyle = '#fff';
+    ctx.lineWidth = 2;
+    ctx.textAlign = 'left';
+    ctx.textBaseline = 'top';
+    let badgeX = canvas.width / 2 + 110;
+    let badgeY = 80;
+    ctx.strokeText('New!', badgeX, badgeY);
+    ctx.fillText('New!', badgeX, badgeY);
+    ctx.restore();
+  }
+}
+
+function drawButton(text) {
+  ctx.fillStyle = '#4caf50';
+  ctx.fillRect(BUTTON_X, BUTTON_Y, BUTTON_WIDTH, BUTTON_HEIGHT);
+  ctx.font = 'bold 28px Arial';
+  ctx.fillStyle = '#fff';
+  ctx.textAlign = 'center';
+  ctx.textBaseline = 'middle';
+  ctx.fillText(text, canvas.width / 2, BUTTON_Y + BUTTON_HEIGHT / 2);
+}
+
+function drawPipes() {
+  for (let i = 0; i < pipes.length; i++) {
+    const p = pipes[i];
+    // Pipe shadow (subtle, offset down and right)
+    ctx.save();
+    ctx.globalAlpha = 0.18;
+    ctx.fillStyle = '#222';
+    ctx.fillRect(p.x + 4, 4, PIPE_WIDTH, p.gapY);
+    ctx.fillRect(p.x + 4, p.gapY + PIPE_GAP + 4, PIPE_WIDTH, canvas.height - (p.gapY + PIPE_GAP));
+    ctx.restore();
+    // Pipe body with gradient
+    let pipeGrad = ctx.createLinearGradient(p.x, 0, p.x + PIPE_WIDTH, 0);
+    pipeGrad.addColorStop(0, '#388e3c');
+    pipeGrad.addColorStop(0.5, '#4caf50');
+    pipeGrad.addColorStop(1, '#388e3c');
+    ctx.fillStyle = pipeGrad;
+    ctx.fillRect(p.x, 0, PIPE_WIDTH, p.gapY);
+    ctx.fillRect(p.x, p.gapY + PIPE_GAP, PIPE_WIDTH, canvas.height - (p.gapY + PIPE_GAP));
+    // Pipe outline
+    ctx.save();
+    ctx.strokeStyle = '#26734d';
+    ctx.lineWidth = 3;
+    ctx.strokeRect(p.x, 0, PIPE_WIDTH, p.gapY);
+    ctx.strokeRect(p.x, p.gapY + PIPE_GAP, PIPE_WIDTH, canvas.height - (p.gapY + PIPE_GAP));
+    ctx.restore();
+  }
+}
+
+function checkCollision() {
+  for (let i = 0; i < pipes.length; i++) {
+    const p = pipes[i];
+    // Bird within pipe x range
+    if (BIRD_X + BIRD_RADIUS > p.x && BIRD_X - BIRD_RADIUS < p.x + PIPE_WIDTH) {
+      // Bird hits top pipe
+      if (birdY - BIRD_RADIUS < p.gapY || birdY + BIRD_RADIUS > p.gapY + PIPE_GAP) {
+        endGame();
+      }
+    }
+  }
+}
+
+function updateScore() {
+  for (let i = 0; i < pipes.length; i++) {
+    const p = pipes[i];
+    if (!p.passed && p.x + PIPE_WIDTH < BIRD_X) {
+      score++;
+      p.passed = true;
+      swishSound.currentTime = 0;
+      swishSound.play();
+      animateScore();
+    }
+  }
+}
+
 function drawBackground() {
   // Sky
   ctx.fillStyle = '#8ecae6';
@@ -100,7 +223,7 @@ function drawBackground() {
   ctx.fill();
   ctx.globalAlpha = 1.0;
 
-  // Wavy Sea (bottom)
+  // Wavy Sea (bottom) with reflection/gradient
   ctx.save();
   ctx.beginPath();
   let seaTop = canvas.height - 100;
@@ -112,8 +235,26 @@ function drawBackground() {
   }
   ctx.lineTo(canvas.width, canvas.height);
   ctx.closePath();
-  ctx.fillStyle = '#219ebc';
+  // Sea gradient
+  let seaGradient = ctx.createLinearGradient(0, seaTop, 0, canvas.height);
+  seaGradient.addColorStop(0, '#219ebc');
+  seaGradient.addColorStop(0.7, '#219ebc');
+  seaGradient.addColorStop(1, '#aaf0ff');
+  ctx.fillStyle = seaGradient;
   ctx.fill();
+  // Reflection
+  ctx.globalAlpha = 0.18;
+  ctx.fillStyle = '#fff';
+  ctx.beginPath();
+  for (let x = 0; x <= canvas.width; x += 10) {
+    let wave = Math.sin((x + performance.now() / 200) / 30) * 8;
+    ctx.lineTo(x, seaTop + wave + 12);
+  }
+  ctx.lineTo(canvas.width, canvas.height);
+  ctx.lineTo(0, canvas.height);
+  ctx.closePath();
+  ctx.fill();
+  ctx.globalAlpha = 1.0;
   ctx.restore();
 
   // Bosphorus Bridge Columns (left and right)
@@ -192,74 +333,6 @@ function updatePipes() {
   }
 }
 
-function drawPipes() {
-  ctx.fillStyle = '#4caf50';
-  for (let i = 0; i < pipes.length; i++) {
-    const p = pipes[i];
-    // Top pipe
-    ctx.fillRect(p.x, 0, PIPE_WIDTH, p.gapY);
-    // Bottom pipe
-    ctx.fillRect(p.x, p.gapY + PIPE_GAP, PIPE_WIDTH, canvas.height - (p.gapY + PIPE_GAP));
-  }
-}
-
-function checkCollision() {
-  for (let i = 0; i < pipes.length; i++) {
-    const p = pipes[i];
-    // Bird within pipe x range
-    if (BIRD_X + BIRD_RADIUS > p.x && BIRD_X - BIRD_RADIUS < p.x + PIPE_WIDTH) {
-      // Bird hits top pipe
-      if (birdY - BIRD_RADIUS < p.gapY || birdY + BIRD_RADIUS > p.gapY + PIPE_GAP) {
-        endGame();
-      }
-    }
-  }
-}
-
-function updateScore() {
-  for (let i = 0; i < pipes.length; i++) {
-    const p = pipes[i];
-    if (!p.passed && p.x + PIPE_WIDTH < BIRD_X) {
-      score++;
-      p.passed = true;
-      swishSound.currentTime = 0;
-      swishSound.play();
-    }
-  }
-}
-
-function drawScore() {
-  ctx.font = 'bold 36px Arial';
-  ctx.fillStyle = '#fff';
-  ctx.textAlign = 'left';
-  ctx.textBaseline = 'top';
-  ctx.strokeStyle = '#222';
-  ctx.lineWidth = 4;
-  ctx.strokeText(score.toString(), 20, 20);
-  ctx.fillText(score.toString(), 20, 20);
-}
-
-function drawButton(text) {
-  ctx.fillStyle = '#4caf50';
-  ctx.fillRect(BUTTON_X, BUTTON_Y, BUTTON_WIDTH, BUTTON_HEIGHT);
-  ctx.font = 'bold 28px Arial';
-  ctx.fillStyle = '#fff';
-  ctx.textAlign = 'center';
-  ctx.textBaseline = 'middle';
-  ctx.fillText(text, canvas.width / 2, BUTTON_Y + BUTTON_HEIGHT / 2);
-}
-
-function drawHighScore() {
-  ctx.font = 'bold 28px Arial';
-  ctx.fillStyle = '#fff';
-  ctx.textAlign = 'center';
-  ctx.textBaseline = 'top';
-  ctx.strokeStyle = '#222';
-  ctx.lineWidth = 4;
-  ctx.strokeText('High Score: ' + highScore, canvas.width / 2, 80);
-  ctx.fillText('High Score: ' + highScore, canvas.width / 2, 80);
-}
-
 function togglePause() {
   if (!gameRunning) return;
   paused = !paused;
@@ -321,6 +394,7 @@ function gameLoop() {
   drawBird();
   checkCollision();
   updateScore();
+  updateScoreAnim();
   // Draw UI last
   drawScore();
   drawSoundToggle();
@@ -359,9 +433,11 @@ function endGame() {
   bgMusic.pause();
   hitSound.currentTime = 0;
   hitSound.play();
+  showNewBadge = false;
   if (score > highScore) {
     highScore = score;
     localStorage.setItem('flappyHighScore', highScore);
+    showNewBadge = true;
   }
   overlayAlpha = 0;
   animateOverlay(1);
