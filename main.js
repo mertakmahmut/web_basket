@@ -7,7 +7,7 @@ const ctx = canvas.getContext('2d');
 const GRAVITY = 0.5;
 const FLAP = -8;
 const BIRD_RADIUS = 20;
-const BIRD_X = 80;
+const BIRD_X = Math.floor(canvas.width * 0.25); // 1/4th of the screen horizontally
 
 // Pipe constants
 const PIPE_WIDTH = 60;
@@ -17,7 +17,7 @@ const PIPE_INTERVAL = 120; // frames between pipes
 const PIPE_DISTANCE = 220; // Minimum horizontal distance between pipes
 
 // Game state
-let birdY = canvas.height / 2;
+let birdY = canvas.height / 2; // Vertically centered
 let birdVelocity = 0;
 let score = 0;
 let gameRunning = false;
@@ -61,6 +61,9 @@ let overlayTargetAlpha = 1;
 let overlayFading = false;
 let overlayFadeCallback = null;
 
+let dimAlpha = 0;
+let dimDirection = 0;
+
 function drawOverlay(alpha) {
   ctx.save();
   ctx.globalAlpha = alpha;
@@ -90,6 +93,32 @@ function overlayFadeStep() {
   if (currentScreen === 'start') drawStartScreen();
   else if (currentScreen === 'gameover') drawGameOverScreen();
   requestAnimationFrame(overlayFadeStep);
+}
+
+function triggerDimEffect() {
+  dimAlpha = 0;
+  dimDirection = 1;
+  requestAnimationFrame(dimStep);
+}
+
+function dimStep() {
+  if (dimDirection === 0) return;
+  if (dimDirection === 1) {
+    dimAlpha += 0.08;
+    if (dimAlpha >= 0.7) {
+      dimAlpha = 0.7;
+      dimDirection = -1;
+    }
+  } else if (dimDirection === -1) {
+    dimAlpha -= 0.08;
+    if (dimAlpha <= 0) {
+      dimAlpha = 0;
+      dimDirection = 0;
+      return;
+    }
+  }
+  drawGameOverScreen(true); // Pass true to indicate dim effect
+  requestAnimationFrame(dimStep);
 }
 
 let currentScreen = 'start'; // 'start', 'game', 'gameover'
@@ -171,7 +200,7 @@ function drawPipes() {
     ctx.globalAlpha = 0.18;
     ctx.fillStyle = '#222';
     ctx.fillRect(p.x + 4, 4, PIPE_WIDTH, p.gapY);
-    ctx.fillRect(p.x + 4, p.gapY + PIPE_GAP + 4, PIPE_WIDTH, canvas.height - (p.gapY + PIPE_GAP));
+    ctx.fillRect(p.x + 4, p.gapY + p.gap + 4, PIPE_WIDTH, canvas.height - (p.gapY + p.gap));
     ctx.restore();
     // Pipe body with gradient
     let pipeGrad = ctx.createLinearGradient(p.x, 0, p.x + PIPE_WIDTH, 0);
@@ -180,13 +209,13 @@ function drawPipes() {
     pipeGrad.addColorStop(1, '#388e3c');
     ctx.fillStyle = pipeGrad;
     ctx.fillRect(p.x, 0, PIPE_WIDTH, p.gapY);
-    ctx.fillRect(p.x, p.gapY + PIPE_GAP, PIPE_WIDTH, canvas.height - (p.gapY + PIPE_GAP));
+    ctx.fillRect(p.x, p.gapY + p.gap, PIPE_WIDTH, canvas.height - (p.gapY + p.gap));
     // Pipe outline
     ctx.save();
     ctx.strokeStyle = '#26734d';
     ctx.lineWidth = 3;
     ctx.strokeRect(p.x, 0, PIPE_WIDTH, p.gapY);
-    ctx.strokeRect(p.x, p.gapY + PIPE_GAP, PIPE_WIDTH, canvas.height - (p.gapY + PIPE_GAP));
+    ctx.strokeRect(p.x, p.gapY + p.gap, PIPE_WIDTH, canvas.height - (p.gapY + p.gap));
     ctx.restore();
   }
 }
@@ -201,7 +230,7 @@ function checkCollision() {
       endGame();
     }
     // Bottom pipe rectangle
-    if (circleRectCollide(BIRD_X, birdY, BIRD_RADIUS, p.x + pipeMargin, p.gapY + PIPE_GAP - pipeMargin, PIPE_WIDTH - 2 * pipeMargin, canvas.height - (p.gapY + PIPE_GAP))) {
+    if (circleRectCollide(BIRD_X, birdY, BIRD_RADIUS, p.x + pipeMargin, p.gapY + p.gap - pipeMargin, PIPE_WIDTH - 2 * pipeMargin, canvas.height - (p.gapY + p.gap))) {
       endGame();
     }
   }
@@ -232,6 +261,14 @@ function updateScore() {
   }
 }
 
+// Cloud state
+const CLOUDS = [
+  { x: 50, y: 80, r: 28, speed: 0.3 },
+  { x: 200, y: 50, r: 22, speed: 0.22 },
+  { x: 320, y: 110, r: 18, speed: 0.18 },
+  { x: 120, y: 140, r: 24, speed: 0.25 },
+];
+
 function drawBackground() {
   // Sky
   ctx.fillStyle = '#8ecae6';
@@ -244,6 +281,18 @@ function drawBackground() {
   ctx.globalAlpha = 0.7;
   ctx.fill();
   ctx.globalAlpha = 1.0;
+
+  // Clouds
+  for (let cloud of CLOUDS) {
+    drawCloud(cloud.x, cloud.y, cloud.r);
+    // Animate cloud
+    cloud.x += cloud.speed;
+    if (cloud.x - cloud.r > canvas.width) {
+      cloud.x = -cloud.r;
+      cloud.y = 40 + Math.random() * 120;
+      cloud.r = 16 + Math.random() * 18;
+    }
+  }
 
   // Wavy Sea (bottom) with reflection/gradient
   ctx.save();
@@ -278,21 +327,19 @@ function drawBackground() {
   ctx.fill();
   ctx.globalAlpha = 1.0;
   ctx.restore();
+}
 
-  // Bosphorus Bridge Columns (left and right)
+function drawCloud(x, y, r) {
   ctx.save();
-  ctx.strokeStyle = '#adb5bd';
-  ctx.lineWidth = 12;
-  // Left column
+  ctx.globalAlpha = 0.7;
+  ctx.fillStyle = '#fff';
   ctx.beginPath();
-  ctx.moveTo(18, seaTop);
-  ctx.lineTo(18, seaTop - 80);
-  ctx.stroke();
-  // Right column
-  ctx.beginPath();
-  ctx.moveTo(canvas.width - 18, seaTop);
-  ctx.lineTo(canvas.width - 18, seaTop - 80);
-  ctx.stroke();
+  ctx.arc(x, y, r, 0, Math.PI * 2);
+  ctx.arc(x + r * 0.8, y + r * 0.2, r * 0.7, 0, Math.PI * 2);
+  ctx.arc(x - r * 0.7, y + r * 0.2, r * 0.6, 0, Math.PI * 2);
+  ctx.arc(x + r * 0.3, y - r * 0.5, r * 0.5, 0, Math.PI * 2);
+  ctx.fill();
+  ctx.globalAlpha = 1.0;
   ctx.restore();
 }
 
@@ -327,20 +374,30 @@ function resetPipes() {
   frameCount = 0;
 }
 
+let dynamicGap = PIPE_GAP;
+
 function addPipe() {
-  // Random gap position
+  // Random gap position, use dynamicGap
   const minGapY = 60;
-  const maxGapY = canvas.height - PIPE_GAP - 60;
+  const maxGapY = canvas.height - dynamicGap - 60;
   const gapY = Math.floor(Math.random() * (maxGapY - minGapY + 1)) + minGapY;
   pipes.push({
     x: canvas.width,
-    gapY: gapY
+    gapY: gapY,
+    gap: dynamicGap
   });
 }
 
+let gameStartTime = null;
+
 function updatePipes() {
-  // Smoothly increase speed as score increases
-  pipeSpeed = PIPE_SPEED + score * 0.15;
+  // Increase speed based on elapsed time (seconds)
+  let elapsed = 0;
+  if (gameStartTime) {
+    elapsed = (Date.now() - gameStartTime) / 1000;
+  }
+  pipeSpeed = Math.min(PIPE_SPEED + elapsed * 0.04, 7); // Max speed 7
+  dynamicGap = PIPE_GAP + Math.min(elapsed * 0.5, 40); // Up to +40px wider
   for (let i = 0; i < pipes.length; i++) {
     pipes[i].x -= pipeSpeed;
   }
@@ -398,11 +455,33 @@ function drawSoundToggle() {
   ctx.restore();
 }
 
+// Play background music continuously unless muted or page hidden
+function ensureMusicPlaying() {
+  if (soundOn && !bgMusic.paused) return;
+  if (soundOn) {
+    bgMusic.play();
+  }
+}
+
+document.addEventListener('visibilitychange', function() {
+  if (document.hidden) {
+    bgMusic.pause();
+  } else {
+    ensureMusicPlaying();
+  }
+});
+
+// Update sound toggle logic to pause/play music
 function setAllSoundMuted(muted) {
   bgMusic.muted = muted;
   bounceSound.muted = muted;
   hitSound.muted = muted;
   swishSound.muted = muted;
+  if (muted) {
+    bgMusic.pause();
+  } else {
+    ensureMusicPlaying();
+  }
 }
 
 function gameLoop() {
@@ -440,8 +519,8 @@ function startGame() {
     pipeSpeed = PIPE_SPEED;
     resetPipes();
     addPipe();
-    bgMusic.currentTime = 0;
-    bgMusic.play();
+    gameStartTime = Date.now();
+    ensureMusicPlaying();
     currentScreen = 'game';
     gameLoop();
   });
@@ -451,7 +530,6 @@ function endGame() {
   gameRunning = false;
   gameOver = true;
   currentScreen = 'gameover';
-  bgMusic.pause();
   hitSound.currentTime = 0;
   hitSound.play();
   showNewBadge = false;
@@ -462,15 +540,24 @@ function endGame() {
   }
   overlayAlpha = 0;
   animateOverlay(1);
-  drawGameOverScreen();
+  triggerDimEffect();
 }
 
-function drawGameOverScreen() {
+function drawGameOverScreen(dimEffect) {
   drawBackground();
   drawPipes();
   drawBird();
   // Overlay
   drawOverlay(0.5 * overlayAlpha);
+  // Dim effect overlay
+  if (dimEffect && dimAlpha > 0) {
+    ctx.save();
+    ctx.globalAlpha = dimAlpha;
+    ctx.fillStyle = '#000';
+    ctx.fillRect(0, 0, canvas.width, canvas.height);
+    ctx.globalAlpha = 1.0;
+    ctx.restore();
+  }
   // UI last
   ctx.save();
   ctx.globalAlpha = overlayAlpha;
@@ -480,6 +567,7 @@ function drawGameOverScreen() {
   drawButton('Share', SHARE_BUTTON_X, SHARE_BUTTON_Y, SHARE_BUTTON_WIDTH, SHARE_BUTTON_HEIGHT);
   drawSoundToggle();
   ctx.restore();
+  ensureMusicPlaying();
 }
 
 function drawStartScreen() {
@@ -501,8 +589,7 @@ function drawStartScreen() {
   ctx.textBaseline = 'top';
   ctx.fillText('Hint: Tap or click to flap!', canvas.width / 2, BUTTON_Y + BUTTON_HEIGHT + 24);
   ctx.restore();
-  bgMusic.pause();
-  bgMusic.currentTime = 0;
+  ensureMusicPlaying();
 }
 
 function handleCanvasClick(e) {
@@ -564,8 +651,8 @@ document.addEventListener('keydown', function(e) {
   }
 });
 
-// Initial draw: show start button
-// On initial load:
+// On initial load, set bgMusic.currentTime = 0
+bgMusic.currentTime = 0;
 overlayAlpha = 1;
 drawStartScreen();
 
