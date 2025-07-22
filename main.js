@@ -561,9 +561,14 @@ function drawGameOverScreen(dimEffect) {
   // UI last
   ctx.save();
   ctx.globalAlpha = overlayAlpha;
+  drawTitleText();
   drawScore();
   drawHighScore();
-  drawButton('Restart');
+  // Basketball button for Restart
+  const ballSize = 72;
+  const ballX = canvas.width / 2 - ballSize / 2;
+  const ballY = BUTTON_Y;
+  drawBallButton('Restart', ballX, ballY, ballSize);
   drawButton('Share', SHARE_BUTTON_X, SHARE_BUTTON_Y, SHARE_BUTTON_WIDTH, SHARE_BUTTON_HEIGHT);
   drawSoundToggle();
   ctx.restore();
@@ -579,15 +584,20 @@ function drawStartScreen() {
   // UI last
   ctx.save();
   ctx.globalAlpha = overlayAlpha;
+  drawTitleText();
   drawScore();
-  drawButton('Start Game');
+  // Basketball button for Start
+  const ballSize = 72;
+  const ballX = canvas.width / 2 - ballSize / 2;
+  const ballY = BUTTON_Y;
+  drawBallButton('Start', ballX, ballY, ballSize);
   drawSoundToggle();
   // Instructions
   ctx.font = 'bold 22px Arial';
   ctx.fillStyle = '#fff';
   ctx.textAlign = 'center';
   ctx.textBaseline = 'top';
-  ctx.fillText('Hint: Tap or click to flap!', canvas.width / 2, BUTTON_Y + BUTTON_HEIGHT + 24);
+  ctx.fillText('Hint: Tap or click to flap!', canvas.width / 2, ballY + ballSize + 24);
   ctx.restore();
   ensureMusicPlaying();
 }
@@ -603,11 +613,15 @@ function handleCanvasClick(e) {
     drawSoundToggle();
     return;
   }
+  const ballSize = 72;
+  const ballX = canvas.width / 2 - ballSize / 2;
+  const ballY = BUTTON_Y;
+  // Check if basketball button is clicked (start or restart)
   if (!gameRunning && gameOver) {
-    // Check if restart button is clicked
+    // Restart
     if (
-      x >= BUTTON_X && x <= BUTTON_X + BUTTON_WIDTH &&
-      y >= BUTTON_Y && y <= BUTTON_Y + BUTTON_HEIGHT
+      x >= ballX && x <= ballX + ballSize &&
+      y >= ballY && y <= ballY + ballSize
     ) {
       startGame();
       return;
@@ -621,10 +635,10 @@ function handleCanvasClick(e) {
       return;
     }
   } else if (!gameRunning && !gameOver) {
-    // Check if start button is clicked
+    // Start
     if (
-      x >= BUTTON_X && x <= BUTTON_X + BUTTON_WIDTH &&
-      y >= BUTTON_Y && y <= BUTTON_Y + BUTTON_HEIGHT
+      x >= ballX && x <= ballX + ballSize &&
+      y >= ballY && y <= ballY + ballSize
     ) {
       startGame();
       return;
@@ -654,8 +668,46 @@ document.addEventListener('keydown', function(e) {
 // On initial load, set bgMusic.currentTime = 0
 bgMusic.currentTime = 0;
 overlayAlpha = 1;
-drawStartScreen();
+if (basketballImg.complete) {
+  drawStartScreen();
+} else {
+  basketballImg.onload = () => drawStartScreen();
+}
 
 // Ensure canvas event listeners are registered
 canvas.addEventListener('mousedown', handleCanvasClick);
 canvas.addEventListener('touchstart', function(e) { e.preventDefault(); handleCanvasClick(e); }); 
+
+function drawBallButton(text, x, y, size) {
+  // Draw basketball image as button
+  ctx.save();
+  ctx.globalAlpha = 0.97;
+  ctx.drawImage(basketballImg, x, y, size, size);
+  ctx.restore();
+  // Draw text centered on the ball
+  ctx.save();
+  ctx.font = `bold ${Math.floor(size * 0.32)}px Arial`;
+  ctx.fillStyle = '#fff';
+  ctx.textAlign = 'center';
+  ctx.textBaseline = 'middle';
+  ctx.shadowColor = '#222';
+  ctx.shadowBlur = 4;
+  ctx.fillText(text, x + size / 2, y + size / 2 + 2);
+  ctx.shadowBlur = 0;
+  ctx.restore();
+}
+
+function drawTitleText() {
+  // Draw title text only (no ball)
+  const titleY = BUTTON_Y - 90;
+  ctx.save();
+  ctx.font = 'bold 40px Arial';
+  ctx.fillStyle = '#ff9800';
+  ctx.textAlign = 'center';
+  ctx.textBaseline = 'middle';
+  ctx.shadowColor = '#222';
+  ctx.shadowBlur = 6;
+  ctx.fillText('Flappy Basketball', canvas.width / 2, titleY);
+  ctx.shadowBlur = 0;
+  ctx.restore();
+} 
