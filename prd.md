@@ -21,6 +21,15 @@ A simple, addictive 2D web game where the player controls a bird, navigating it 
   - Mouse click and touch support
 - [x] **Score Display**
   - Real-time score during gameplay
+- [x] **Sound Effects**
+  - Flap sound
+  - Score sound
+  - Collision/game over sound
+- [x] **High Score Tracking** (local storage)
+- [x] **Pause/Resume Functionality**
+- [x] **Sound On/Off Toggle**
+- [x] **Start Screen & Game Over Screen**
+  - Game title, start button, final score, high score, restart button, sound toggle
 
 ---
 
@@ -32,10 +41,6 @@ A simple, addictive 2D web game where the player controls a bird, navigating it 
   - Pipe sprites (top and bottom)
   - Background (sky, clouds, ground)
   - UI elements (score, start/restart buttons)
-- [ ] **Sound Effects**
-  - Flap sound
-  - Score sound
-  - Collision/game over sound
 
 ### 2. Technical Implementation
 - [ ] **Technology Stack**
@@ -43,19 +48,10 @@ A simple, addictive 2D web game where the player controls a bird, navigating it 
   - JavaScript (or TypeScript) for game logic
   - Responsive design for desktop and mobile
 
-### 3. User Interface
-- [ ] **Start Screen**
-  - Game title, start button
-- [ ] **Game Over Screen**
-  - Final score, restart button
-
-### 4. Additional Features (Optional)
-- [ ] **High Score Tracking** (local storage)
-- [ ] **Pause/Resume Functionality**
-- [ ] **Sound On/Off Toggle**
+### 3. Additional Features (Optional)
 - [ ] **Share Score (social media integration)**
 
-### 5. Testing & Deployment
+### 4. Testing & Deployment
 - [ ] **Cross-browser Testing**
 - [ ] **Performance Optimization**
 - [ ] **Deployment (e.g., GitHub Pages, Vercel, Netlify)**
@@ -71,3 +67,4 @@ A simple, addictive 2D web game where the player controls a bird, navigating it 
 ## Version History
 - v0.1: PRD created
 - v0.2: Core gameplay, scoring, and collision completed
+- v0.3: Sound effects, high score, pause/resume, sound toggle, and UI polish completed

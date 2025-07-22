@@ -22,6 +22,8 @@ let score = 0;
 let gameRunning = false;
 let gameOver = false;
 let highScore = Number(localStorage.getItem('flappyHighScore')) || 0;
+let paused = false;
+let soundOn = true;
 
 // Pipe state
 let pipes = [];
@@ -176,8 +178,59 @@ function drawHighScore() {
   ctx.fillText('High Score: ' + highScore, canvas.width / 2, 80);
 }
 
-function gameLoop() {
+function togglePause() {
   if (!gameRunning) return;
+  paused = !paused;
+  if (paused) {
+    bgMusic.pause();
+    drawPauseOverlay();
+  } else {
+    bgMusic.play();
+    gameLoop();
+  }
+}
+
+function drawPauseOverlay() {
+  ctx.save();
+  ctx.globalAlpha = 0.7;
+  ctx.fillStyle = '#000';
+  ctx.fillRect(0, 0, canvas.width, canvas.height);
+  ctx.globalAlpha = 1.0;
+  ctx.font = 'bold 48px Arial';
+  ctx.fillStyle = '#fff';
+  ctx.textAlign = 'center';
+  ctx.textBaseline = 'middle';
+  ctx.fillText('Paused', canvas.width / 2, canvas.height / 2);
+  ctx.restore();
+}
+
+function drawSoundToggle() {
+  const iconX = canvas.width - 50;
+  const iconY = 20;
+  ctx.save();
+  ctx.beginPath();
+  ctx.arc(iconX + 15, iconY + 15, 15, 0, Math.PI * 2);
+  ctx.fillStyle = soundOn ? '#4caf50' : '#888';
+  ctx.fill();
+  ctx.strokeStyle = '#222';
+  ctx.stroke();
+  ctx.font = 'bold 20px Arial';
+  ctx.fillStyle = '#fff';
+  ctx.textAlign = 'center';
+  ctx.textBaseline = 'middle';
+  ctx.fillText(soundOn ? '🔊' : '🔇', iconX + 15, iconY + 15);
+  ctx.restore();
+}
+
+function setAllSoundMuted(muted) {
+  bgMusic.muted = muted;
+  bounceSound.muted = muted;
+  hitSound.muted = muted;
+  swishSound.muted = muted;
+}
+
+function gameLoop() {
+  if (!gameRunning || paused) return;
   drawBackground();
   updateBird();
   updatePipes();
@@ -186,6 +239,7 @@ function gameLoop() {
   checkCollision();
   updateScore();
   drawScore();
+  drawSoundToggle();
   if (gameRunning) requestAnimationFrame(gameLoop);
 }
 
@@ -225,12 +279,20 @@ function endGame() {
   drawScore();
   drawHighScore();
   drawButton('Restart');
+  drawSoundToggle();
 }
 
 function handleCanvasClick(e) {
   const rect = canvas.getBoundingClientRect();
   const x = (e.touches ? e.touches[0].clientX : e.clientX) - rect.left;
   const y = (e.touches ? e.touches[0].clientY : e.clientY) - rect.top;
+  // Sound toggle button (top right)
+  if (x >= canvas.width - 50 && x <= canvas.width - 20 && y >= 20 && y <= 50) {
+    soundOn = !soundOn;
+    setAllSoundMuted(!soundOn);
+    drawSoundToggle();
+    return;
+  }
   if (!gameRunning && gameOver) {
     // Check if restart button is clicked
     if (
@@ -247,13 +309,16 @@ function handleCanvasClick(e) {
     ) {
       startGame();
     }
-  } else {
+  } else if (gameRunning && !paused) {
     flap();
   }
 }
 
-canvas.addEventListener('mousedown', handleCanvasClick);
-canvas.addEventListener('touchstart', function(e) { e.preventDefault(); handleCanvasClick(e); });
+document.addEventListener('keydown', function(e) {
+  if (e.key === 'p' || e.key === 'P') {
+    togglePause();
+  }
+});
 
 // Initial draw: show start button
 function drawStartScreen() {
@@ -262,8 +327,13 @@ function drawStartScreen() {
   drawBird();
   drawScore();
   drawButton('Start Game');
+  drawSoundToggle();
   bgMusic.pause();
   bgMusic.currentTime = 0;
 }
 
-drawStartScreen(); 
+drawStartScreen();
+
+// Ensure canvas event listeners are registered
+canvas.addEventListener('mousedown', handleCanvasClick);
+canvas.addEventListener('touchstart', function(e) { e.preventDefault(); handleCanvasClick(e); }); 
